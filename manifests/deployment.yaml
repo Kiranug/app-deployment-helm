@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: python-web-app
-        image: jubbuseacrinmh.azurecr.io/<your-image-name>:<tag>
+        image: {{IMAGE_NAME}}
         ports:
         - containerPort: 5000
         env:
