@@ -1,4 +1,4 @@
-name: Build and Deploy to ACR and AKS
+name: Build and Deploy to ACR
 
 on:
   push:
@@ -6,25 +6,20 @@ on:
       - main
 
 env:
-  ACR_NAME: jubbuseacrinmh  # without .azurecr.io
+  ACR_NAME: jubbuseacrinmh    # without .azurecr.io
   IMAGE_NAME: myecomapp
-  CLUSTER_NAME: aks-free-cluster
-  RESOURCE_GROUP: rg-aks-free-tier
-  INGRESS_HOST: myapp.${{ github.event.inputs.environment }}.example.com
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write  # OIDC permission to authenticate with Azure
-      contents: read   # For accessing repo content
+      id-token: write
+      contents: read
 
     steps:
-      # Checkout the code
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Login to Azure
       - name: Login to Azure
         uses: azure/login@v1
         with:
@@ -32,62 +27,34 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Login to ACR
       - name: Login to ACR
         run: |
           az acr login --name $ACR_NAME
 
-      # Build the Docker image
       - name: Build Docker Image
         run: |
           docker build -t $ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }} .
 
-      # Push Docker image to ACR
       - name: Push Docker Image
         run: |
           docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}
 
-            # Create image_name.txt and upload it as an artifact
-      - name: Create image_name.txt
-        run: echo "$ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}" > image_name.txt
-
-      # Upload image_name.txt as an artifact
+      # Upload image_name.txt as artifact
       - name: Upload image_name.txt as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: image-name
           path: image_name.txt
 
-      # Download image_name.txt from the artifact
+      # Download image_name.txt from artifact
       - name: Download image_name.txt artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v2
         with:
           name: image-name
           path: ./artifacts
 
-      # Read the image name from the artifact and set it as an environment variable
+      # Read Image Name from artifact
       - name: Read Image Name from artifact
         run: |
           IMAGE_NAME=$(cat ./artifacts/image_name.txt)
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
-
-      # Replace placeholders in Kubernetes manifests with the actual image name and environment-specific values
-      - name: Replace Variables in Manifests
-        run: |
-          sed -i "s|\${IMAGE_NAME}|$IMAGE_NAME|g" ./deployment.yaml
-          sed -i "s|\${TAG}|${GITHUB_SHA}|g" ./deployment.yaml
-          sed -i "s|\${INGRESS_HOST}|$INGRESS_HOST|g" ./ingress.yaml
-
-      # Set AKS Context
-      - name: Set AKS Context
-        uses: azure/aks-set-context@v3
-        with:
-          resource-group: ${{ env.RESOURCE_GROUP }}
-          cluster-name: ${{ env.CLUSTER_NAME }}
-
-      # Deploy the application to AKS
-      - name: Deploy to AKS
-        run: |
-          kubectl apply -f ./deployment.yaml
-          kubectl apply -f ./service.yaml
-          kubectl apply -f ./ingress.yaml
