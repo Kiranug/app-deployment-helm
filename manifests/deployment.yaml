@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
         - name: myapp
-          image: <your-acr-name>.azurecr.io/myapp:latest
+          image: jubbuseacrinmh.azurecr.io/myapp:latest
           ports:
             - containerPort: 80
