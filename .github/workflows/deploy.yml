@@ -47,11 +47,11 @@ jobs:
         run: |
           docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}
 
-      # Create image_name.txt and upload as artifact
+            # Create image_name.txt and upload it as an artifact
       - name: Create image_name.txt
         run: echo "$ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}" > image_name.txt
 
-      # Upload image_name.txt as artifact
+      # Upload image_name.txt as an artifact
       - name: Upload image_name.txt as artifact
         uses: actions/upload-artifact@v3
         with:
