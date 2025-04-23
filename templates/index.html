@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Store</title>
+</head>
+<body>
+    <h1>Welcome to the Online Clothing Store</h1>
+    <ul>
+        {% for product in products %}
+            <li>
+                <h2>{{ product.name }}</h2>
+                <p>{{ product.description }}</p>
+                <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                <p>${{ product.price }}</p>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
