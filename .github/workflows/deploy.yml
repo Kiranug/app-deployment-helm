@@ -1,4 +1,4 @@
-name: Build, Push to ACR and Deploy to AKS
+name: Build and Deploy to ACR
 
 on:
   push:
@@ -7,14 +7,10 @@ on:
 
 env:
   ACR_NAME: jubbuseacrinmh    # without .azurecr.io
-  IMAGE_NAME: myecomapp
-  AKS_CLUSTER_NAME: aks-free-cluster
-  RESOURCE_GROUP: rg-aks-free-tier
-  LOCATION: eastus
-  KUBECONFIG_FILE: ${{ github.workspace }}/kubeconfig
+  IMAGE_NAME: myapp
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -23,9 +19,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-
-      - name: Set up Azure CLI
-        uses: azure/setup-azure-cli@v1
 
       - name: Login to Azure
         uses: azure/login@v1
@@ -42,20 +35,6 @@ jobs:
         run: |
           docker build -t $ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }} .
 
-      - name: Push Docker Image to ACR
+      - name: Push Docker Image
         run: |
           docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}
-
-      - name: Get AKS Credentials
-        run: |
-          az aks get-credentials --resource-group $RESOURCE_GROUP --name $AKS_CLUSTER_NAME --file $KUBECONFIG_FILE
-
-      - name: Replace Image Name in Deployment Manifest
-        run: |
-          sed -i 's|{{IMAGE_NAME}}|'"$ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}"'|g' k8s/deployment.yaml
-
-      - name: Deploy to AKS
-        run: |
-          kubectl --kubeconfig=$KUBECONFIG_FILE apply -f k8s/deployment.yaml
-          kubectl --kubeconfig=$KUBECONFIG_FILE apply -f k8s/service.yaml
-          kubectl --kubeconfig=$KUBECONFIG_FILE apply -f k8s/ingress.yaml
