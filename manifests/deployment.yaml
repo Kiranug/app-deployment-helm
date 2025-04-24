@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: python-web-app
-  labels:
-    app: python-web-app
 spec:
   replicas: 1
   selector:
@@ -15,10 +13,7 @@ spec:
         app: python-web-app
     spec:
       containers:
-      - name: python-web-app
-        image: REPLACE_IMAGE
-        ports:
-        - containerPort: 5000
-        env:
-        - name: PORT
-          value: "5000"
+        - name: python-web-app
+          image: REPLACE_IMAGE
+          ports:
+            - containerPort: 5000

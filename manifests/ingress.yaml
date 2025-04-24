@@ -13,6 +13,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: myapp-service
+                name: python-web-app-svc
                 port:
                   number: 80
