@@ -36,8 +36,5 @@ if __name__ == '__main__':
             db.session.add_all(items)
             db.session.commit()
 
-    # Note: Set debug=False in production
-    app.run(debug=True)
-
-    if __name__ == "__main__":
+    # Run app so it's accessible from Ingress controller
     app.run(host="0.0.0.0", port=5000, debug=True)
