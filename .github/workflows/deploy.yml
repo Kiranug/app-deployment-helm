@@ -62,8 +62,8 @@ jobs:
 
     - name: Get AKS Credentials
       run: |
-        az aks get-credentials --resource-group "${{ github.event.inputs.RESOURCE_GROUP }}" \
-                               --name "${{ github.event.inputs.AKS_CLUSTER_NAME }}" \
+        az aks get-credentials --resource-group "${{ github.event.inputs.resource_group }}" \
+                               --name "${{ github.event.inputs.aks_cluster }}" \
                                --overwrite-existing
 
     - name: Deploy to AKS
