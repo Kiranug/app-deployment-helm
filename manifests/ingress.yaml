@@ -2,13 +2,12 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: python-web-app-ingress
+  namespace: default
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
-  ingressClassName: nginx
   rules:
-    - host: python-app.local   # <- change this to something unique
-      http:
+    - http:
         paths:
           - path: /
             pathType: Prefix
