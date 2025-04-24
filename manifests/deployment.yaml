@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: python-web-app
-        image: {{IMAGE_NAME}}
+        image: REPLACE_IMAGE
         ports:
         - containerPort: 5000
         env:
