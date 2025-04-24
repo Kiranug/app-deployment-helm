@@ -21,11 +21,9 @@ on:
           - prod-aks
 
 env:
-  ACR_NAME: jubbuseacrinmh
+  ACR_NAME: jubbuseacrinmh         # without .azurecr.io
   IMAGE_NAME: myecomapp
-  KUBECONFIG_FILE: ${{ github.workspace }}/kubeconfig
-  RESOURCE_GROUP: ${{ github.event.inputs.resource_group }}
-  AKS_CLUSTER_NAME: ${{ github.event.inputs.aks_cluster }}
+  IMAGE_TAG_FILE: image_name.txt   # file that stores image tag (created by docker build)
 
 jobs:
   build-and-deploy:
@@ -35,41 +33,42 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      - name: Set up Azure CLI
-        uses: azure/setup-azure-cli@v1
+    - name: Azure Login via OIDC
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    - name: azure cli
+      uses: azure/setup-cli@v1
+      with:
+        version: 'latest'
+        check-latest: true
 
-      - name: Login to ACR
-        run: |
-          az acr login --name $ACR_NAME
+    - name: ACR Login
+      run: az acr login --name $ACR_NAME
 
-      - name: Build Docker Image
-        run: |
-          docker build -t $ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }} .
+    - name: Build and Push Docker Image
+      run: |
+        IMAGE_TAG=${{ github.sha }}
+        docker build -t $ACR_NAME.azurecr.io/$IMAGE_NAME:$IMAGE_TAG .
+        docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:$IMAGE_TAG
+        echo "$IMAGE_TAG" > $IMAGE_TAG_FILE
 
-      - name: Push Docker Image to ACR
-        run: |
-          docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}
+    - name: Get AKS Credentials
+      run: |
+        az aks get-credentials --resource-group "${{ github.event.inputs.RESOURCE_GROUP }}" \
+                               --name "${{ github.event.inputs.AKS_CLUSTER_NAME }}" \
+                               --overwrite-existing
 
-      - name: Get AKS Credentials
-        run: |
-          az aks get-credentials --resource-group $RESOURCE_GROUP --name $AKS_CLUSTER_NAME --file $KUBECONFIG_FILE
-
-      - name: Replace Image Name in Deployment Manifest
-        run: |
-          sed -i 's|{{IMAGE_NAME}}|'"$ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}"'|g' manifests/deployment.yaml
-
-      - name: Deploy to AKS
-        run: |
-          kubectl --kubeconfig=$KUBECONFIG_FILE apply -f manifests/deployment.yaml
-          kubectl --kubeconfig=$KUBECONFIG_FILE apply -f manifests/service.yaml
-          kubectl --kubeconfig=$KUBECONFIG_FILE apply -f manifests/ingress.yaml
+    - name: Deploy to AKS
+      run: |
+        IMAGE_TAG=$(cat $IMAGE_TAG_FILE)
+        echo "Using image tag: $IMAGE_TAG"
+        sed "s|REPLACE_IMAGE|$ACR_NAME.azurecr.io/$IMAGE_NAME:$IMAGE_TAG|g" manifests/deployment.yaml | kubectl apply -f -
+        kubectl apply -f manifests/service.yaml
+        kubectl apply -f manifests/ingress.yaml
