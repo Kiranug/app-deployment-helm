@@ -43,12 +43,6 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: azure cli
-      uses: azure/setup-cli@v1
-      with:
-        version: 'latest'
-        check-latest: true
-
     - name: ACR Login
       run: az acr login --name $ACR_NAME
 
