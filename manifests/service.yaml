@@ -3,10 +3,11 @@ kind: Service
 metadata:
   name: python-web-app-svc
 spec:
-  type: ClusterIP
+  type: NodePort  # Changed from ClusterIP to NodePort
   selector:
     app: python-web-app
   ports:
     - protocol: TCP
-      port: 80
+      port: 5000
       targetPort: 5000
+      nodePort: 30007  # Optional: specify a port between 30000-32767

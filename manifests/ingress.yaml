@@ -3,8 +3,6 @@ kind: Ingress
 metadata:
   name: python-web-app-ingress
   namespace: default
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
     - http:
@@ -15,4 +13,4 @@ spec:
               service:
                 name: python-web-app-svc
                 port:
-                  number: 80
+                  number: 5000
